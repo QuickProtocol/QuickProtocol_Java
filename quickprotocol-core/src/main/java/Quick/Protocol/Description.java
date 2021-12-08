@@ -1,4 +1,4 @@
-package com.github.quickprotocol;
+package Quick.Protocol;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;

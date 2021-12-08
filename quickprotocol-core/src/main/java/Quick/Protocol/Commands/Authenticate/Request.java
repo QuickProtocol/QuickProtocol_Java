@@ -1,7 +1,7 @@
 package Quick.Protocol.Commands.Authenticate;
 
-import com.github.quickprotocol.DisplayName;
-import com.github.quickprotocol.IQpCommandRequest;
+import Quick.Protocol.DisplayName;
+import Quick.Protocol.IQpCommandRequest;
 
 @DisplayName("认证")
 public class Request implements IQpCommandRequest<Response> {

@@ -1,7 +1,7 @@
 package Quick.Protocol.Commands.PrivateCommand;
 
-import com.github.quickprotocol.DisplayName;
-import com.github.quickprotocol.IQpCommandRequest;
+import Quick.Protocol.DisplayName;
+import Quick.Protocol.IQpCommandRequest;
 
 /**
  * 私有命令请求

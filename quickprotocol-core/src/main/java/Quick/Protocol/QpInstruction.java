@@ -1,4 +1,4 @@
-package com.github.quickprotocol;
+package Quick.Protocol;
 
 /**
  * QP指令集

@@ -1,7 +1,7 @@
 package Quick.Protocol.Notices;
 
-import com.github.quickprotocol.Description;
-import com.github.quickprotocol.DisplayName;
+import Quick.Protocol.Description;
+import Quick.Protocol.DisplayName;
 
 @DisplayName("私有通知")
 @Description("用于传递私有协议通知。")

@@ -1,7 +1,7 @@
 package Quick.Protocol.Commands.Connect;
 
-import com.github.quickprotocol.DisplayName;
-import com.github.quickprotocol.IQpCommandRequest;
+import Quick.Protocol.DisplayName;
+import Quick.Protocol.IQpCommandRequest;
 
 /**
  * 连接请求命令

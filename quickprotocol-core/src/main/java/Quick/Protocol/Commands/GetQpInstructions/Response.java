@@ -1,6 +1,6 @@
 package Quick.Protocol.Commands.GetQpInstructions;
 
-import com.github.quickprotocol.QpInstruction;
+import Quick.Protocol.QpInstruction;
 
 /**
  * 获取全部指令集信息响应

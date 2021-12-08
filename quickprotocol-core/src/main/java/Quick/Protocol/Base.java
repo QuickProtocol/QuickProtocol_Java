@@ -2,10 +2,6 @@ package Quick.Protocol;
 
 import java.util.ArrayList;
 
-import com.github.quickprotocol.QpCommandInfo;
-import com.github.quickprotocol.QpInstruction;
-import com.github.quickprotocol.QpNoticeInfo;
-
 public class Base {
 	private static QpInstruction _Instruction = null;
 

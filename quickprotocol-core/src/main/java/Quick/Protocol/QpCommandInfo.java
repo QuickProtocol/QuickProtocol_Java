@@ -1,4 +1,4 @@
-package com.github.quickprotocol;
+package Quick.Protocol;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
@@ -79,7 +79,7 @@ public class QpCommandInfo {
 	 * 
 	 * @return
 	 */
-	public Class getRequestType() {
+	public Class GetRequestType() {
 		if (requestType != null)
 			return requestType;
 		try {

@@ -1,4 +1,4 @@
-package com.github.quickprotocol;
+package Quick.Protocol;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
@@ -50,7 +50,7 @@ public class QpNoticeInfo {
 	/// <summary>
 	/// 获取通知类型
 	/// </summary>
-	public Class getNoticeType() {
+	public Class GetNoticeType() {
 		if (noticeType != null)
 			return noticeType;
 		try {

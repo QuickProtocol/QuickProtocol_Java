@@ -1,4 +1,4 @@
-package com.github.quickprotocol;
+package Quick.Protocol;
 
 import java.util.HashMap;
 
@@ -14,16 +14,16 @@ public class CommandExecuterManager {
 	 * 
 	 * @return
 	 */
-	public String[] getRegisterCommandRequestTypeNames() {
+	public String[] GetRegisterCommandRequestTypeNames() {
 		return commandExecuterDict.keySet().toArray(new String[0]);
 	}
 
-	public void register(String cmdRequestTypeName, ICommandExecuter commandExecuter) {
+	public void Register(String cmdRequestTypeName, ICommandExecuter commandExecuter) {
 		commandExecuterDict.put(cmdRequestTypeName, commandExecuter);
 	}
 
-	public void register(Class cmdRequestType, ICommandExecuter commandExecuter) {
-		register(cmdRequestType.getName(), commandExecuter);
+	public void Register(Class cmdRequestType, ICommandExecuter commandExecuter) {
+		Register(cmdRequestType.getName(), commandExecuter);
 	}
 
 	/**
@@ -34,11 +34,11 @@ public class CommandExecuterManager {
 	 * @param cmdRequestModel
 	 * @return
 	 */
-	public Object executeCommand(QpChannel handler, String cmdRequestTypeName, Object cmdRequestModel) {
-		if (!canExecuteCommand(cmdRequestTypeName))
+	public Object ExecuteCommand(QpChannel handler, String cmdRequestTypeName, Object cmdRequestModel) {
+		if (!CanExecuteCommand(cmdRequestTypeName))
 			throw new RuntimeException(String.format("Command Request Type[{0}] has no executer.", cmdRequestTypeName));
 		ICommandExecuter commandExecuter = commandExecuterDict.get(cmdRequestTypeName);
-		return commandExecuter.execute(handler, cmdRequestModel);
+		return commandExecuter.Execute(handler, cmdRequestModel);
 	}
 
 	/**
@@ -47,7 +47,7 @@ public class CommandExecuterManager {
 	 * @param cmdRequestTypeName
 	 * @return
 	 */
-	public Boolean canExecuteCommand(String cmdRequestTypeName) {
+	public Boolean CanExecuteCommand(String cmdRequestTypeName) {
 		return commandExecuterDict.containsKey(cmdRequestTypeName);
 	}
 }
