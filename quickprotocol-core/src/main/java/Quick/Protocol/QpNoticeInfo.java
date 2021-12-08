@@ -1,6 +1,7 @@
 package Quick.Protocol;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 
@@ -10,7 +11,7 @@ import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class QpNoticeInfo {
 
-	private static ObjectMapper mapper = new ObjectMapper();
+	private static ObjectMapper mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 	private static JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(mapper);
 
 	private Class noticeType;

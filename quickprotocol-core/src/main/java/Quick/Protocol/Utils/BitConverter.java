@@ -1,0 +1,23 @@
+package Quick.Protocol.Utils;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+public class BitConverter {
+	/**
+	 * 是否是小端字节序
+	 */
+	public static Boolean IsLittleEndian;
+
+	static {
+		IsLittleEndian = ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN);
+	}
+
+	public static byte[] GetBytes(int data) {
+		return ByteBuffer.allocate(4).putInt(data).array();
+	}
+
+	public static String ToString(byte[] array, int offset, int count) {
+		return new String(org.apache.commons.codec.binary.Hex.encodeHex(array, offset, count, false));
+	}
+}
