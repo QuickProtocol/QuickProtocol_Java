@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.github.quickprotocol.QpCommandInfo;
 import com.github.quickprotocol.QpInstruction;
+import com.github.quickprotocol.QpNoticeInfo;
 
 public class Base {
 	private static QpInstruction _Instruction = null;
@@ -19,19 +20,19 @@ public class Base {
 					Quick.Protocol.Commands.Connect.Response.class));
 			cmdList.add(QpCommandInfo.Create(new Quick.Protocol.Commands.Authenticate.Request(),
 					Quick.Protocol.Commands.Authenticate.Response.class));
+			cmdList.add(QpCommandInfo.Create(new Quick.Protocol.Commands.HandShake.Request(),
+					Quick.Protocol.Commands.HandShake.Response.class));
+			cmdList.add(QpCommandInfo.Create(new Quick.Protocol.Commands.PrivateCommand.Request(),
+					Quick.Protocol.Commands.PrivateCommand.Response.class));
+			cmdList.add(QpCommandInfo.Create(new Quick.Protocol.Commands.GetQpInstructions.Request(),
+					Quick.Protocol.Commands.GetQpInstructions.Response.class));
 			_Instruction.CommandInfos = cmdList.toArray(new QpCommandInfo[0]);
+
+			ArrayList<QpNoticeInfo> noticeList = new ArrayList<QpNoticeInfo>();
+			noticeList.add(QpNoticeInfo.Create(Quick.Protocol.Notices.PrivateNotice.class));
+			_Instruction.NoticeInfos = noticeList.toArray(new QpNoticeInfo[0]);
 		}
 		return _Instruction;
-		/*
-		 * new QpInstruction() { Id = typeof(Base).FullName, Name = "基础指令集", NoticeInfos
-		 * = new QpNoticeInfo[] { QpNoticeInfo.Create(new Notices.PrivateNotice()) },
-		 * CommandInfos = new QpCommandInfo[] { QpCommandInfo.Create(new
-		 * Commands.Connect.Request()), QpCommandInfo.Create(new
-		 * Commands.Authenticate.Request()), QpCommandInfo.Create(new
-		 * Commands.HandShake.Request()), QpCommandInfo.Create(new
-		 * Commands.PrivateCommand.Request()), QpCommandInfo.Create(new
-		 * Commands.GetQpInstructions.Request()), } };
-		 */
 	}
 
 }
