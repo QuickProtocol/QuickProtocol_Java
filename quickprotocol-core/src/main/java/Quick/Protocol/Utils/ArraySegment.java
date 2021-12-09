@@ -1,4 +1,4 @@
-package Quick.Protocol;
+package Quick.Protocol.Utils;
 
 public class ArraySegment {
 	private byte[] array;

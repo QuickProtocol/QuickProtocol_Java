@@ -1,4 +1,4 @@
-package Quick.Protocol;
+package Quick.Protocol.Utils;
 
 import java.io.IOException;
 import java.io.OutputStream;

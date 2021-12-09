@@ -1,7 +1,7 @@
 package Quick.Protocol.Commands.Connect;
 
-import Quick.Protocol.DisplayName;
 import Quick.Protocol.IQpCommandRequest;
+import Quick.Protocol.Annotations.DisplayName;
 
 /**
  * 连接请求命令

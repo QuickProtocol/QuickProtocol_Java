@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 
+import Quick.Protocol.Annotations.Description;
+import Quick.Protocol.Annotations.DisplayName;
+
 /**
  * 通知信息
  */

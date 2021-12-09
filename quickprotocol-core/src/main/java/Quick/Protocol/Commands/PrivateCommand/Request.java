@@ -1,7 +1,7 @@
 package Quick.Protocol.Commands.PrivateCommand;
 
-import Quick.Protocol.DisplayName;
 import Quick.Protocol.IQpCommandRequest;
+import Quick.Protocol.Annotations.DisplayName;
 
 /**
  * 私有命令请求

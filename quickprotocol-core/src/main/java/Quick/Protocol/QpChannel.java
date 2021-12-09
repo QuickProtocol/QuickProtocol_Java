@@ -17,6 +17,9 @@ import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -36,13 +39,16 @@ import Quick.Protocol.Listeners.HeartbeatPackageReceivedListener;
 import Quick.Protocol.Listeners.NoticePackageReceivedListener;
 import Quick.Protocol.Listeners.RawCommandRequestPackageReceivedListener;
 import Quick.Protocol.Listeners.RawNoticePackageReceivedListener;
+import Quick.Protocol.Utils.ArraySegment;
 import Quick.Protocol.Utils.BitConverter;
 import Quick.Protocol.Utils.ByteUtils;
+import Quick.Protocol.Utils.CancellationToken;
 import Quick.Protocol.Utils.Convert;
 import Quick.Protocol.Utils.CryptographyUtils;
 import Quick.Protocol.Utils.ExceptionUtils;
 import Quick.Protocol.Utils.JsonConvert;
 import Quick.Protocol.Utils.LogUtils;
+import Quick.Protocol.Utils.MemoryOutputStream;
 
 public abstract class QpChannel {
 	static {
@@ -88,9 +94,7 @@ public abstract class QpChannel {
 	private HashMap<String, Class<?>> commandRequestTypeDict = new HashMap<String, Class<?>>();
 	private HashMap<String, Class<?>> commandResponseTypeDict = new HashMap<String, Class<?>>();
 	private HashMap<Class<?>, Class<?>> commandRequestTypeResponseTypeDict = new HashMap<Class<?>, Class<?>>();
-
-	// private ConcurrentDictionary<string, CommandContext> commandDict = new
-	// ConcurrentDictionary<string, CommandContext>();
+	private ConcurrentHashMap<String, CommandContext> commandDict = new ConcurrentHashMap<String, CommandContext>();
 
 	/**
 	 * 当前是否连接
@@ -100,6 +104,66 @@ public abstract class QpChannel {
 	 * 最后的异常
 	 */
 	public Exception LastException;
+
+	private ArrayList<HeartbeatPackageReceivedListener> HeartbeatPackageReceivedListeners = new ArrayList<HeartbeatPackageReceivedListener>();
+
+	public void AddHeartbeatPackageReceivedListener(HeartbeatPackageReceivedListener listener) {
+		HeartbeatPackageReceivedListeners.add(listener);
+	}
+
+	public void RemoveHeartbeatPackageReceivedListener(HeartbeatPackageReceivedListener listener) {
+		HeartbeatPackageReceivedListeners.remove(listener);
+	}
+
+	private ArrayList<RawNoticePackageReceivedListener> RawNoticePackageReceivedListeners = new ArrayList<RawNoticePackageReceivedListener>();
+
+	public void AddRawNoticePackageReceivedListener(RawNoticePackageReceivedListener listener) {
+		RawNoticePackageReceivedListeners.add(listener);
+	}
+
+	public void RemoveRawNoticePackageReceivedListener(RawNoticePackageReceivedListener listener) {
+		RawNoticePackageReceivedListeners.remove(listener);
+	}
+
+	private ArrayList<NoticePackageReceivedListener> NoticePackageReceivedListeners = new ArrayList<NoticePackageReceivedListener>();
+
+	public void AddNoticePackageReceivedListener(NoticePackageReceivedListener listener) {
+		NoticePackageReceivedListeners.add(listener);
+	}
+
+	public void RemoveNoticePackageReceivedListener(NoticePackageReceivedListener listener) {
+		NoticePackageReceivedListeners.remove(listener);
+	}
+
+	private ArrayList<CommandRequestPackageReceivedListener> CommandRequestPackageReceivedListeners = new ArrayList<CommandRequestPackageReceivedListener>();
+
+	public void AddCommandRequestPackageReceivedListener(CommandRequestPackageReceivedListener listener) {
+		CommandRequestPackageReceivedListeners.add(listener);
+	}
+
+	public void RemoveCommandRequestPackageReceivedListener(CommandRequestPackageReceivedListener listener) {
+		CommandRequestPackageReceivedListeners.remove(listener);
+	}
+
+	private ArrayList<CommandResponsePackageReceivedListener> CommandResponsePackageReceivedListeners = new ArrayList<CommandResponsePackageReceivedListener>();
+
+	public void AddCommandResponsePackageReceivedListener(CommandResponsePackageReceivedListener listener) {
+		CommandResponsePackageReceivedListeners.add(listener);
+	}
+
+	public void RemoveCommandResponsePackageReceivedListener(CommandResponsePackageReceivedListener listener) {
+		CommandResponsePackageReceivedListeners.remove(listener);
+	}
+
+	private ArrayList<RawCommandRequestPackageReceivedListener> RawCommandRequestPackageReceivedListeners = new ArrayList<RawCommandRequestPackageReceivedListener>();
+
+	public void AddRawCommandRequestPackageReceivedListener(RawCommandRequestPackageReceivedListener listener) {
+		RawCommandRequestPackageReceivedListeners.add(listener);
+	}
+
+	public void RemoveRawCommandRequestPackageReceivedListener(RawCommandRequestPackageReceivedListener listener) {
+		RawCommandRequestPackageReceivedListeners.remove(listener);
+	}
 
 	/**
 	 * 缓存大小，初始大小为1KB
@@ -119,14 +183,6 @@ public abstract class QpChannel {
 		recvBuffer2 = new byte[bufferSize];
 		sendBuffer = new byte[bufferSize];
 		sendBuffer2 = new byte[bufferSize];
-	}
-
-	protected void ChangeTransportTimeout() {
-		/*
-		 * OutputStream stream = QpPackageHandler_OutputStream; if (stream != null &&
-		 * stream.CanTimeout) { stream.WriteTimeout = options.InternalTransportTimeout;
-		 * stream.ReadTimeout = options.InternalTransportTimeout; }
-		 */
 	}
 
 	/// <summary>
@@ -195,7 +251,6 @@ public abstract class QpChannel {
 		QpPackageHandler_OutputStream = outstream;
 		options.InternalCompress = false;
 		options.InternalEncrypt = false;
-		ChangeTransportTimeout();
 	}
 
 	/**
@@ -753,66 +808,6 @@ public abstract class QpChannel {
 		}
 	}
 
-	private ArrayList<HeartbeatPackageReceivedListener> HeartbeatPackageReceivedListeners = new ArrayList<HeartbeatPackageReceivedListener>();
-
-	public void AddHeartbeatPackageReceivedListener(HeartbeatPackageReceivedListener listener) {
-		HeartbeatPackageReceivedListeners.add(listener);
-	}
-
-	public void RemoveHeartbeatPackageReceivedListener(HeartbeatPackageReceivedListener listener) {
-		HeartbeatPackageReceivedListeners.remove(listener);
-	}
-
-	private ArrayList<RawNoticePackageReceivedListener> RawNoticePackageReceivedListeners = new ArrayList<RawNoticePackageReceivedListener>();
-
-	public void AddRawNoticePackageReceivedListener(RawNoticePackageReceivedListener listener) {
-		RawNoticePackageReceivedListeners.add(listener);
-	}
-
-	public void RemoveRawNoticePackageReceivedListener(RawNoticePackageReceivedListener listener) {
-		RawNoticePackageReceivedListeners.remove(listener);
-	}
-
-	private ArrayList<NoticePackageReceivedListener> NoticePackageReceivedListeners = new ArrayList<NoticePackageReceivedListener>();
-
-	public void AddNoticePackageReceivedListener(NoticePackageReceivedListener listener) {
-		NoticePackageReceivedListeners.add(listener);
-	}
-
-	public void RemoveNoticePackageReceivedListener(NoticePackageReceivedListener listener) {
-		NoticePackageReceivedListeners.remove(listener);
-	}
-
-	private ArrayList<CommandRequestPackageReceivedListener> CommandRequestPackageReceivedListeners = new ArrayList<CommandRequestPackageReceivedListener>();
-
-	public void AddCommandRequestPackageReceivedListener(CommandRequestPackageReceivedListener listener) {
-		CommandRequestPackageReceivedListeners.add(listener);
-	}
-
-	public void RemoveCommandRequestPackageReceivedListener(CommandRequestPackageReceivedListener listener) {
-		CommandRequestPackageReceivedListeners.remove(listener);
-	}
-
-	private ArrayList<CommandResponsePackageReceivedListener> CommandResponsePackageReceivedListeners = new ArrayList<CommandResponsePackageReceivedListener>();
-
-	public void AddCommandResponsePackageReceivedListener(CommandResponsePackageReceivedListener listener) {
-		CommandResponsePackageReceivedListeners.add(listener);
-	}
-
-	public void RemoveCommandResponsePackageReceivedListener(CommandResponsePackageReceivedListener listener) {
-		CommandResponsePackageReceivedListeners.remove(listener);
-	}
-
-	private ArrayList<RawCommandRequestPackageReceivedListener> RawCommandRequestPackageReceivedListeners = new ArrayList<RawCommandRequestPackageReceivedListener>();
-
-	public void AddRawCommandRequestPackageReceivedListener(RawCommandRequestPackageReceivedListener listener) {
-		RawCommandRequestPackageReceivedListeners.add(listener);
-	}
-
-	public void RemoveRawCommandRequestPackageReceivedListener(RawCommandRequestPackageReceivedListener listener) {
-		RawCommandRequestPackageReceivedListeners.remove(listener);
-	}
-
 	/**
 	 * 接收到原始通知数据包时
 	 * 
@@ -908,12 +903,14 @@ public abstract class QpChannel {
 			for (CommandResponsePackageReceivedListener listener : CommandResponsePackageReceivedListeners)
 				listener.Invoke(commandId, code, message, typeName, content);
 
-		/*
-		 * //设置指令响应 CommandContext commandContext; if (!commandDict.TryRemove(commandId,
-		 * out commandContext)) return; if (code == 0)
-		 * commandContext.SetResponse(typeName, content); else
-		 * commandContext.SetResponse(new CommandException(code, message));
-		 */
+		// 设置指令响应
+		if (!commandDict.containsKey(commandId))
+			return;
+		CommandContext commandContext = commandDict.get(commandId);
+		if (code == 0)
+			commandContext.SetResponse(typeName, content);
+		else
+			commandContext.SetResponse(new CommandException(code, message));
 	}
 
 	protected void BeginReadPackage(final CancellationToken token) {
@@ -1028,5 +1025,95 @@ public abstract class QpChannel {
 			}
 		});
 		thread.start();
+	}
+
+	/**
+	 * 添加命令执行器管理器
+	 * 
+	 * @param commandExecuterManager
+	 */
+	public void AddCommandExecuterManager(CommandExecuterManager commandExecuterManager) {
+		options.CommandExecuterManagerList.add(commandExecuterManager);
+	}
+
+	public FutureTask<CommandResponseTypeNameAndContent> SendCommand(String requestTypeName, String requestContent) {
+		return SendCommand(requestTypeName, requestContent, 30 * 1000, null);
+	}
+
+	public FutureTask<CommandResponseTypeNameAndContent> SendCommand(final String requestTypeName,
+			final String requestContent, int timeout, final Runnable afterSendHandler) {
+		final CommandContext commandContext = new CommandContext(requestTypeName);
+		commandDict.put(commandContext.Id, commandContext);
+
+		if (timeout <= 0) {
+			SendCommandRequestPackage(commandContext.Id, requestTypeName, requestContent, afterSendHandler);
+			return commandContext.ResponseTask;
+		}
+		// 如果设置了超时
+		else {
+			try {
+				FutureTask<?> sendTask = new FutureTask<String>(new Runnable() {
+					public void run() {
+						SendCommandRequestPackage(commandContext.Id, requestTypeName, requestContent, afterSendHandler);
+					}
+				}, null);
+				sendTask.wait(timeout);
+			} catch (Exception ex) {
+				if (LogUtils.LogCommand)
+					LogUtils.Log("%s: [Send-CommandRequestPackage-Timeout]CommandId:%s,Type:%s,Content:%s",
+							dateFormat.format(new Date()), commandContext.Id, requestTypeName,
+							LogUtils.LogContent ? requestContent : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
+
+				commandContext.Timeout();
+				commandDict.remove(commandContext.Id);
+			}
+			return commandContext.ResponseTask;
+		}
+	}
+
+	public <TCmdResponse> TCmdResponse SendCommand(IQpCommandRequest<TCmdResponse> request,
+			Class<TCmdResponse> responseClass) {
+		return SendCommand(request, responseClass, 30 * 1000, null);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <TCmdResponse> TCmdResponse SendCommand(IQpCommandRequest<TCmdResponse> request,
+			Class<TCmdResponse> responseClass, int timeout, final Runnable afterSendHandler) {
+		try {
+			Class<?> requestType = request.getClass();
+			final String typeName = requestType.getName();
+			final String requestContent = JsonConvert.SerializeObject(request);
+			final CommandContext commandContext = new CommandContext(typeName);
+			commandDict.put(commandContext.Id, commandContext);
+
+			CommandResponseTypeNameAndContent ret = null;
+			if (timeout <= 0) {
+				SendCommandRequestPackage(commandContext.Id, typeName, requestContent, afterSendHandler);
+				ret = commandContext.ResponseTask.get();
+			}
+			// 如果设置了超时
+			else {
+				try {
+					FutureTask<?> sendTask = new FutureTask<String>(new Runnable() {
+						public void run() {
+							SendCommandRequestPackage(commandContext.Id, typeName, requestContent, afterSendHandler);
+						}
+					}, null);
+					sendTask.wait(timeout);
+				} catch (Exception ex) {
+					if (LogUtils.LogCommand)
+						LogUtils.Log("%s: [Send-CommandRequestPackage-Timeout]CommandId:%s,Type:%s,Content:%s",
+								dateFormat.format(new Date()), commandContext.Id, typeName,
+								LogUtils.LogContent ? requestContent : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
+
+					commandContext.Timeout();
+					commandDict.remove(commandContext.Id);
+				}
+				ret = commandContext.ResponseTask.get(timeout, TimeUnit.MILLISECONDS);
+			}
+			return (TCmdResponse) JsonConvert.DeserializeObject(ret.Content, responseClass);
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 }

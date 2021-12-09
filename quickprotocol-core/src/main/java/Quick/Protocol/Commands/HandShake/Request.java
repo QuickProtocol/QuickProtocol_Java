@@ -1,7 +1,7 @@
 package Quick.Protocol.Commands.HandShake;
 
-import Quick.Protocol.DisplayName;
 import Quick.Protocol.IQpCommandRequest;
+import Quick.Protocol.Annotations.DisplayName;
 
 @DisplayName("握手")
 public class Request implements IQpCommandRequest<Response> {

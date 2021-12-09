@@ -1,4 +1,4 @@
-package Quick.Protocol;
+package Quick.Protocol.Annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
