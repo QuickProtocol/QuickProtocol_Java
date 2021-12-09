@@ -58,7 +58,13 @@ public class App {
 		 * System.out.println(org.apache.commons.codec.binary.Hex.encodeHexString(dec.
 		 * doFinal(dotnetEnBuffer)));
 		 */
+		System.out.println(org.apache.commons.codec.binary.Hex.encodeHexString(new byte[] { -1, 0, (byte) 255 }));
 		System.out.println("" + BitConverter.IsLittleEndian);
+		System.out.println(BitConverter.class.getName());
+		byte a = (byte) 255;
+		int b = (int) a & 0xff;
+		System.out.println("Byte 0xFF to int:" + b);
+		System.out.println(String.format("%s %s", "12", 12));
 		System.in.read();
 	}
 

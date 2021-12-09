@@ -23,5 +23,5 @@ public class QpPackageType {
 	/**
 	 * 拆分数据包
 	 */
-	public final static byte Split = -1;
+	public final static byte Split = (byte) 255;
 }
