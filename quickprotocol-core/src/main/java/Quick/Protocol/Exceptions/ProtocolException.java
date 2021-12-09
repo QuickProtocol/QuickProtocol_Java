@@ -1,4 +1,6 @@
-package Quick.Protocol;
+package Quick.Protocol.Exceptions;
+
+import Quick.Protocol.ArraySegment;
 
 public class ProtocolException extends RuntimeException {
 	/**

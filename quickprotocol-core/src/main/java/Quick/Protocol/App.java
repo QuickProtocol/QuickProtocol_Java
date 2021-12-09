@@ -65,6 +65,7 @@ public class App {
 		int b = (int) a & 0xff;
 		System.out.println("Byte 0xFF to int:" + b);
 		System.out.println(String.format("%s %s", "12", 12));
+		System.out.println(String.format("UTF-8 Charset: %s", Charset.forName("UTF-8")));		
 		System.in.read();
 	}
 

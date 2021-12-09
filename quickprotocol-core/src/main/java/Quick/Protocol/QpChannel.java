@@ -6,10 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
-import java.security.InvalidKeyException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,8 +28,13 @@ import javax.crypto.spec.DESKeySpec;
 
 import org.apache.commons.codec.binary.StringUtils;
 
+import Quick.Protocol.Exceptions.CommandException;
+import Quick.Protocol.Exceptions.ProtocolException;
+import Quick.Protocol.Listeners.CommandRequestPackageReceivedListener;
+import Quick.Protocol.Listeners.CommandResponsePackageReceivedListener;
 import Quick.Protocol.Listeners.HeartbeatPackageReceivedListener;
 import Quick.Protocol.Listeners.NoticePackageReceivedListener;
+import Quick.Protocol.Listeners.RawCommandRequestPackageReceivedListener;
 import Quick.Protocol.Listeners.RawNoticePackageReceivedListener;
 import Quick.Protocol.Utils.BitConverter;
 import Quick.Protocol.Utils.ByteUtils;
@@ -42,7 +44,6 @@ import Quick.Protocol.Utils.ExceptionUtils;
 import Quick.Protocol.Utils.JsonConvert;
 import Quick.Protocol.Utils.LogUtils;
 
-@SuppressWarnings({ "unchecked", "rawtypes" })
 public abstract class QpChannel {
 	static {
 		// 增加PKCS7填充的支持
@@ -83,10 +84,10 @@ public abstract class QpChannel {
 	private byte[] passwordMd5Buffer;
 	private Cipher enc;
 	private Cipher dec;
-
-	private HashMap<String, Class> commandRequestTypeDict = new HashMap<String, Class>();
-	private HashMap<String, Class> commandResponseTypeDict = new HashMap<String, Class>();
-	private HashMap<Class, Class> commandRequestTypeResponseTypeDict = new HashMap<Class, Class>();
+	private Charset encoding = Charset.forName("UTF-8");
+	private HashMap<String, Class<?>> commandRequestTypeDict = new HashMap<String, Class<?>>();
+	private HashMap<String, Class<?>> commandResponseTypeDict = new HashMap<String, Class<?>>();
+	private HashMap<Class<?>, Class<?>> commandRequestTypeResponseTypeDict = new HashMap<Class<?>, Class<?>>();
 
 	// private ConcurrentDictionary<string, CommandContext> commandDict = new
 	// ConcurrentDictionary<string, CommandContext>();
@@ -133,7 +134,7 @@ public abstract class QpChannel {
 	/// </summary>
 	public Object Tag;
 
-	private HashMap<String, Class> noticeTypeDict = new HashMap<String, Class>();
+	private HashMap<String, Class<?>> noticeTypeDict = new HashMap<String, Class<?>>();
 
 	public QpChannel(QpChannelOptions options) {
 		this.options = options;
@@ -166,8 +167,8 @@ public abstract class QpChannel {
 				// 添加命令数据包信息
 				if (instructionSet.CommandInfos != null && instructionSet.CommandInfos.length > 0) {
 					for (QpCommandInfo item : instructionSet.CommandInfos) {
-						Class requestType = item.GetRequestType();
-						Class responseType = item.GetResponseType();
+						Class<?> requestType = item.GetRequestType();
+						Class<?> responseType = item.GetResponseType();
 						commandRequestTypeDict.put(item.RequestTypeName, requestType);
 						commandResponseTypeDict.put(item.ResponseTypeName, responseType);
 						commandRequestTypeResponseTypeDict.put(requestType, responseType);
@@ -754,62 +755,62 @@ public abstract class QpChannel {
 
 	private ArrayList<HeartbeatPackageReceivedListener> HeartbeatPackageReceivedListeners = new ArrayList<HeartbeatPackageReceivedListener>();
 
-	/**
-	 * 添加收到心跳数据包事件
-	 * 
-	 * @param listener
-	 */
 	public void AddHeartbeatPackageReceivedListener(HeartbeatPackageReceivedListener listener) {
 		HeartbeatPackageReceivedListeners.add(listener);
 	}
 
-	/**
-	 * 移除收到心跳数据包事件
-	 * 
-	 * @param listener
-	 */
 	public void RemoveHeartbeatPackageReceivedListener(HeartbeatPackageReceivedListener listener) {
 		HeartbeatPackageReceivedListeners.remove(listener);
 	}
 
 	private ArrayList<RawNoticePackageReceivedListener> RawNoticePackageReceivedListeners = new ArrayList<RawNoticePackageReceivedListener>();
 
-	/**
-	 * 添加收到原始通知数据包事件
-	 * 
-	 * @param listener
-	 */
 	public void AddRawNoticePackageReceivedListener(RawNoticePackageReceivedListener listener) {
 		RawNoticePackageReceivedListeners.add(listener);
 	}
 
-	/**
-	 * 移除收到原始通知数据包事件
-	 * 
-	 * @param listener
-	 */
 	public void RemoveRawNoticePackageReceivedListener(RawNoticePackageReceivedListener listener) {
 		RawNoticePackageReceivedListeners.remove(listener);
 	}
 
 	private ArrayList<NoticePackageReceivedListener> NoticePackageReceivedListeners = new ArrayList<NoticePackageReceivedListener>();
 
-	/**
-	 * 添加收到通知数据包事件
-	 * 
-	 * @param listener
-	 */
 	public void AddNoticePackageReceivedListener(NoticePackageReceivedListener listener) {
 		NoticePackageReceivedListeners.add(listener);
 	}
 
-	/**
-	 * 移除收到通知数据包事件
-	 * 
-	 * @param listener
-	 */
 	public void RemoveNoticePackageReceivedListener(NoticePackageReceivedListener listener) {
 		NoticePackageReceivedListeners.remove(listener);
+	}
+
+	private ArrayList<CommandRequestPackageReceivedListener> CommandRequestPackageReceivedListeners = new ArrayList<CommandRequestPackageReceivedListener>();
+
+	public void AddCommandRequestPackageReceivedListener(CommandRequestPackageReceivedListener listener) {
+		CommandRequestPackageReceivedListeners.add(listener);
+	}
+
+	public void RemoveCommandRequestPackageReceivedListener(CommandRequestPackageReceivedListener listener) {
+		CommandRequestPackageReceivedListeners.remove(listener);
+	}
+
+	private ArrayList<CommandResponsePackageReceivedListener> CommandResponsePackageReceivedListeners = new ArrayList<CommandResponsePackageReceivedListener>();
+
+	public void AddCommandResponsePackageReceivedListener(CommandResponsePackageReceivedListener listener) {
+		CommandResponsePackageReceivedListeners.add(listener);
+	}
+
+	public void RemoveCommandResponsePackageReceivedListener(CommandResponsePackageReceivedListener listener) {
+		CommandResponsePackageReceivedListeners.remove(listener);
+	}
+
+	private ArrayList<RawCommandRequestPackageReceivedListener> RawCommandRequestPackageReceivedListeners = new ArrayList<RawCommandRequestPackageReceivedListener>();
+
+	public void AddRawCommandRequestPackageReceivedListener(RawCommandRequestPackageReceivedListener listener) {
+		RawCommandRequestPackageReceivedListeners.add(listener);
+	}
+
+	public void RemoveRawCommandRequestPackageReceivedListener(RawCommandRequestPackageReceivedListener listener) {
+		RawCommandRequestPackageReceivedListeners.remove(listener);
 	}
 
 	/**
@@ -834,12 +835,198 @@ public abstract class QpChannel {
 
 			if (NoticePackageReceivedListeners.size() > 0) {
 				Object contentModel = JsonConvert.DeserializeObject(content, noticeTypeDict.get(typeName));
-				for (NoticePackageReceivedListener listener : NoticePackageReceivedListeners) {
+				for (NoticePackageReceivedListener listener : NoticePackageReceivedListeners)
 					listener.Invoke(typeName, contentModel);
-				}
 			}
 		}
 	}
-	
-	
+
+	/**
+	 * 接收到命令请求数据包时
+	 * 
+	 * @param commandId
+	 * @param typeName
+	 * @param content
+	 */
+	private void OnCommandRequestReceived(String commandId, String typeName, String content) {
+		if (RawCommandRequestPackageReceivedListeners.size() > 0)
+			for (RawCommandRequestPackageReceivedListener listener : RawCommandRequestPackageReceivedListeners) {
+				boolean handled = listener.Invoke(commandId, typeName, content);
+				// 如果已经处理，则直接返回
+				if (handled)
+					return;
+			}
+
+		try {
+			// 如果在字典中未找到此类型名称，则直接返回
+			if (!commandRequestTypeDict.containsKey(typeName))
+				throw new CommandException((byte) 255, String.format("Unknown RequestType: %s.", typeName));
+
+			Class<?> cmdRequestType = commandRequestTypeDict.get(typeName);
+			Class<?> cmdResponseType = commandRequestTypeResponseTypeDict.get(cmdRequestType);
+
+			Object contentModel = JsonConvert.DeserializeObject(content, cmdRequestType);
+
+			if (CommandRequestPackageReceivedListeners.size() > 0)
+				for (CommandRequestPackageReceivedListener listener : CommandRequestPackageReceivedListeners)
+					listener.Invoke(commandId, typeName, contentModel);
+
+			boolean hasCommandExecuter = false;
+			if (options.CommandExecuterManagerList != null)
+				for (CommandExecuterManager commandExecuterManager : options.CommandExecuterManagerList) {
+					if (commandExecuterManager.CanExecuteCommand(typeName)) {
+						hasCommandExecuter = true;
+						Object responseModel = commandExecuterManager.ExecuteCommand(this, typeName, contentModel);
+						SendCommandResponsePackage(commandId, (byte) 0, null, cmdResponseType.getName(),
+								JsonConvert.SerializeObject(responseModel));
+						break;
+					}
+				}
+			if (!hasCommandExecuter)
+				throw new CommandException((byte) 255, "No CommandExecuter for RequestType:" + typeName);
+		} catch (CommandException ex) {
+			String errorMessage = ExceptionUtils.GetExceptionString(ex);
+			SendCommandResponsePackage(commandId, ex.Code, errorMessage, null, null);
+		} catch (Exception ex) {
+			String errorMessage = ExceptionUtils.GetExceptionString(ex);
+			SendCommandResponsePackage(commandId, (byte) 255, errorMessage, null, null);
+		}
+	}
+
+	/**
+	 * 接收到命令响应数据包时
+	 * 
+	 * @param commandId
+	 * @param code
+	 * @param message
+	 * @param typeName
+	 * @param content
+	 */
+	private void OnCommandResponseReceived(String commandId, byte code, String message, String typeName,
+			String content) {
+		if (CommandResponsePackageReceivedListeners.size() > 0)
+			for (CommandResponsePackageReceivedListener listener : CommandResponsePackageReceivedListeners)
+				listener.Invoke(commandId, code, message, typeName, content);
+
+		/*
+		 * //设置指令响应 CommandContext commandContext; if (!commandDict.TryRemove(commandId,
+		 * out commandContext)) return; if (code == 0)
+		 * commandContext.SetResponse(typeName, content); else
+		 * commandContext.SetResponse(new CommandException(code, message));
+		 */
+	}
+
+	protected void BeginReadPackage(final CancellationToken token) {
+		if (token.IsCancellationRequested())
+			return;
+
+		Thread thread = new Thread(new Runnable() {
+			public void run() {
+				while (true) {
+					if (token.IsCancellationRequested())
+						break;
+					ArraySegment pkg = ReadPackageAsync(token);
+					if (pkg.getCount() > 0) {
+						byte packageType = pkg.getArray()[pkg.getOffset() + PACKAGE_HEAD_LENGTH - 1];
+						switch (packageType) {
+						case QpPackageType.Heartbeat: {
+							if (LogUtils.LogHeartbeat)
+								LogUtils.Log(
+										String.format("%s: [Recv-HeartbetaPackage]", dateFormat.format(new Date())));
+							if (HeartbeatPackageReceivedListeners.size() > 0)
+								for (HeartbeatPackageReceivedListener listener : HeartbeatPackageReceivedListeners)
+									listener.Invoke();
+							break;
+						}
+						case QpPackageType.Notice: {
+							int typeNameLengthOffset = pkg.getOffset() + PACKAGE_HEAD_LENGTH;
+							int typeNameLength = pkg.getArray()[typeNameLengthOffset];
+
+							int typeNameOffset = typeNameLengthOffset + 1;
+
+							String typeName = encoding
+									.decode(ByteBuffer.wrap(pkg.getArray(), typeNameOffset, typeNameLength)).toString();
+							int contentOffset = typeNameOffset + typeNameLength;
+							String content = encoding.decode(ByteBuffer.wrap(pkg.getArray(), contentOffset,
+									pkg.getOffset() + pkg.getCount() - contentOffset)).toString();
+							if (LogUtils.LogNotice)
+								LogUtils.Log("%s: [Recv-NoticePackage]Type:%s,Content:%s",
+										dateFormat.format(new Date()), typeName,
+										LogUtils.LogContent ? content : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
+
+							if (RawNoticePackageReceivedListeners.size() > 0)
+								for (RawNoticePackageReceivedListener listener : RawNoticePackageReceivedListeners)
+									listener.Invoke(typeName, content);
+							break;
+						}
+						case QpPackageType.CommandRequest: {
+							int commandIdOffset = pkg.getOffset() + PACKAGE_HEAD_LENGTH;
+							String commandId = BitConverter.ToString(pkg.getArray(), commandIdOffset, COMMAND_ID_LENGTH)
+									.replace("-", "").toLowerCase();
+
+							int typeNameLengthOffset = commandIdOffset + COMMAND_ID_LENGTH;
+							int typeNameLength = pkg.getArray()[typeNameLengthOffset];
+
+							int typeNameOffset = typeNameLengthOffset + 1;
+							String typeName = encoding
+									.decode(ByteBuffer.wrap(pkg.getArray(), typeNameOffset, typeNameLength)).toString();
+
+							int contentOffset = typeNameOffset + typeNameLength;
+							String content = encoding.decode(ByteBuffer.wrap(pkg.getArray(), contentOffset,
+									pkg.getOffset() + pkg.getCount() - contentOffset)).toString();
+
+							if (LogUtils.LogCommand)
+								LogUtils.Log("%s: [Recv-CommandRequestPackage]Type:%s,Content:%s",
+										dateFormat.format(new Date()), typeName,
+										LogUtils.LogContent ? content : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
+
+							OnCommandRequestReceived(commandId, typeName, content);
+							break;
+						}
+						case QpPackageType.CommandResponse: {
+							int commandIdOffset = pkg.getOffset() + PACKAGE_HEAD_LENGTH;
+							String commandId = BitConverter.ToString(pkg.getArray(), commandIdOffset, COMMAND_ID_LENGTH)
+									.replace("-", "").toLowerCase();
+
+							int codeOffset = commandIdOffset + COMMAND_ID_LENGTH;
+							byte code = pkg.getArray()[codeOffset];
+
+							String typeName = null;
+							String content = null;
+							String message = null;
+
+							// 如果成功
+							if (code == 0) {
+								int typeNameLengthOffset = codeOffset + 1;
+								int typeNameLength = Convert.ToInt32(pkg.getArray()[typeNameLengthOffset]);
+
+								int typeNameOffset = typeNameLengthOffset + 1;
+								typeName = encoding
+										.decode(ByteBuffer.wrap(pkg.getArray(), typeNameOffset, typeNameLength))
+										.toString();
+
+								int contentOffset = typeNameOffset + typeNameLength;
+								content = encoding.decode(ByteBuffer.wrap(pkg.getArray(), contentOffset,
+										pkg.getOffset() + pkg.getCount() - contentOffset)).toString();
+							} else {
+								int messageOffset = codeOffset + 1;
+								message = encoding.decode(ByteBuffer.wrap(pkg.getArray(), messageOffset,
+										pkg.getOffset() + pkg.getCount() - messageOffset)).toString();
+							}
+
+							if (LogUtils.LogCommand)
+								LogUtils.Log("%s: [Recv-CommandResponsePackage]Code:%s，Message：%s，Type:%s,Content:%s",
+										dateFormat.format(new Date()), code, message, typeName,
+										LogUtils.LogContent ? content : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
+
+							OnCommandResponseReceived(commandId, code, message, typeName, content);
+							break;
+						}
+						}
+					}
+				}
+			}
+		});
+		thread.start();
+	}
 }

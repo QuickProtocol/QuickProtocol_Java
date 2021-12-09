@@ -6,4 +6,8 @@ public class Convert {
 		return (byte) data;
 	}
 
+	public static int ToInt32(byte b) {
+		int ret = (int) b & 0xff;
+		return ret;
+	}
 }
