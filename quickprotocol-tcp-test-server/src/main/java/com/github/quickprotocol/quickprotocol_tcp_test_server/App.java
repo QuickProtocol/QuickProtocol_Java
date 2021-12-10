@@ -1,13 +1,10 @@
 package com.github.quickprotocol.quickprotocol_tcp_test_server;
 
 import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedType;
 import java.net.InetAddress;
 import java.util.Date;
 
 import Quick.Protocol.QpServerChannel;
-import Quick.Protocol.Listeners.ConnectedListener;
 import Quick.Protocol.Listeners.ServerChannelConnectedListener;
 import Quick.Protocol.Listeners.ServerChannelDisconnectedListener;
 import Quick.Protocol.Utils.LogUtils;
@@ -25,8 +22,7 @@ public class App {
 		Quick.Protocol.Utils.LogUtils.LogSplit = true;
 		Quick.Protocol.Utils.LogUtils.LogCommand = true;
 		Quick.Protocol.Utils.LogUtils.SetConsoleLogHandler();
-		
-		
+
 		Quick.Protocol.Tcp.QpTcpServerOptions options = new Quick.Protocol.Tcp.QpTcpServerOptions();
 		options.Address = InetAddress.getLoopbackAddress();
 		options.Port = 3011;

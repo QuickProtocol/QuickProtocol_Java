@@ -8,7 +8,7 @@ public class BitConverter {
 	/**
 	 * 是否是小端字节序
 	 */
-	public static Boolean IsLittleEndian;
+	public static boolean IsLittleEndian;
 
 	static {
 		IsLittleEndian = ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN);

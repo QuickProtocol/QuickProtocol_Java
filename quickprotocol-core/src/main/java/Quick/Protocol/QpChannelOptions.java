@@ -48,12 +48,12 @@ public abstract class QpChannelOptions {
 	/**
 	 * 内部是否压缩
 	 */
-	protected Boolean InternalCompress = false;
+	protected boolean InternalCompress = false;
 	/**
 	 * 内部是否加密
 	 */
 
-	protected Boolean InternalEncrypt = false;
+	protected boolean InternalEncrypt = false;
 	/**
 	 * 内部接收超时(默认15秒)
 	 */
@@ -75,7 +75,7 @@ public abstract class QpChannelOptions {
 	/**
 	 * 是否触发NoticePackageReceived事件
 	 */
-	public Boolean RaiseNoticePackageReceivedEvent = true;
+	public boolean RaiseNoticePackageReceivedEvent = true;
 
 	/**
 	 * 指令执行器管理器列表

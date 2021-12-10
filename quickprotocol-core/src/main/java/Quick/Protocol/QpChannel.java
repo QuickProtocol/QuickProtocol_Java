@@ -99,7 +99,7 @@ public abstract class QpChannel {
 	/**
 	 * 当前是否连接
 	 */
-	public Boolean IsConnected;
+	public boolean IsConnected = false;
 	/**
 	 * 最后的异常
 	 */
@@ -297,22 +297,18 @@ public abstract class QpChannel {
 				// 如果压缩
 				if (options.InternalCompress) {
 					byte[] currentBuffer = getFreeBuffer(packageBuffer.getArray(), sendBuffer, sendBuffer2);
-					ByteArrayOutputStream ms = new ByteArrayOutputStream(currentBuffer.length);
+					MemoryOutputStream ms = new MemoryOutputStream(currentBuffer, 0, currentBuffer.length);
 
 					// 写入包长度
 					for (int i = 0; i < PACKAGE_TOTAL_LENGTH_LENGTH; i++)
 						ms.write(0);
 					GZIPOutputStream gzStream = new GZIPOutputStream(ms);
-
 					gzStream.write(packageBuffer.getArray(), packageBuffer.getOffset() + PACKAGE_TOTAL_LENGTH_LENGTH,
 							packageBuffer.getCount() - PACKAGE_TOTAL_LENGTH_LENGTH);
 					gzStream.flush();
 					gzStream.close();
-
-					int packageTotalLength = ms.size();
-					ms.writeBytes(currentBuffer);
+					int packageTotalLength = ms.getPosition();
 					ms.close();
-
 					writePackageTotalLengthToBuffer(currentBuffer, 0, packageTotalLength);
 					packageBuffer = new ArraySegment(currentBuffer, 0, packageTotalLength);
 				}
@@ -1068,12 +1064,7 @@ public abstract class QpChannel {
 		// 如果设置了超时
 		else {
 			try {
-				FutureTask<?> sendTask = new FutureTask<String>(new Runnable() {
-					public void run() {
-						SendCommandRequestPackage(commandContext.Id, requestTypeName, requestContent, afterSendHandler);
-					}
-				}, null);
-				sendTask.wait(timeout);
+				SendCommandRequestPackage(commandContext.Id, requestTypeName, requestContent, afterSendHandler);
 			} catch (Exception ex) {
 				if (LogUtils.LogCommand)
 					LogUtils.Log("%s: [Send-CommandRequestPackage-Timeout]CommandId:%s,Type:%s,Content:%s",
@@ -1110,12 +1101,7 @@ public abstract class QpChannel {
 			// 如果设置了超时
 			else {
 				try {
-					FutureTask<?> sendTask = new FutureTask<String>(new Runnable() {
-						public void run() {
-							SendCommandRequestPackage(commandContext.Id, typeName, requestContent, afterSendHandler);
-						}
-					}, null);
-					sendTask.wait(timeout);
+					SendCommandRequestPackage(commandContext.Id, typeName, requestContent, afterSendHandler);
 				} catch (Exception ex) {
 					if (LogUtils.LogCommand)
 						LogUtils.Log("%s: [Send-CommandRequestPackage-Timeout]CommandId:%s,Type:%s,Content:%s",

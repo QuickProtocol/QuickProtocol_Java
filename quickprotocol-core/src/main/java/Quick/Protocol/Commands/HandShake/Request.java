@@ -12,9 +12,9 @@ public class Request implements IQpCommandRequest<Response> {
 	/// <summary>
 	/// 启用加密(默认为false)
 	/// </summary>
-	public Boolean EnableEncrypt = false;
+	public boolean EnableEncrypt = false;
 	/// <summary>
 	/// 启用压缩(默认为false)
 	/// </summary>
-	public Boolean EnableCompress = false;
+	public boolean EnableCompress = false;
 }

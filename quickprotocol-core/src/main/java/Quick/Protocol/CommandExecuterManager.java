@@ -46,7 +46,7 @@ public class CommandExecuterManager {
 	 * @param cmdRequestTypeName
 	 * @return
 	 */
-	public Boolean CanExecuteCommand(String cmdRequestTypeName) {
+	public boolean CanExecuteCommand(String cmdRequestTypeName) {
 		return commandExecuterDict.containsKey(cmdRequestTypeName);
 	}
 }

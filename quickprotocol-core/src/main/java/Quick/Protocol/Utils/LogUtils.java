@@ -10,13 +10,13 @@ public class LogUtils {
 	/// <summary>
 	/// 是否记录心跳相关日志
 	/// </summary>
-	public static Boolean LogPackage = false;
-	public static Boolean LogHeartbeat = false;
-	public static Boolean LogNotice = false;
-	public static Boolean LogCommand = false;
-	public static Boolean LogContent = false;
-	public static Boolean LogSplit = false;
-	public static Boolean LogConnection = false;
+	public static boolean LogPackage = false;
+	public static boolean LogHeartbeat = false;
+	public static boolean LogNotice = false;
+	public static boolean LogCommand = false;
+	public static boolean LogContent = false;
+	public static boolean LogSplit = false;
+	public static boolean LogConnection = false;
 
 	private static LogHandler LogHandler = null;
 

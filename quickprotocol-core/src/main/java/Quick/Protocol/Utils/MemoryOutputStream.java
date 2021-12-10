@@ -10,6 +10,10 @@ public class MemoryOutputStream extends OutputStream {
 	private int offset;
 	private int length;
 
+	public int getPosition() {
+		return position;
+	}
+
 	public MemoryOutputStream(byte[] buffer, int offset, int length) {
 		this.buffer = buffer;
 		this.offset = offset;

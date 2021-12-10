@@ -24,11 +24,9 @@ public class QpTcpClient extends QpClient {
 				Close();
 
 			// 开始连接
-			tcpClient = new Socket();
+			tcpClient = new Socket(options.Host, options.Port);
 			if (options.LocalHost != null && !"".equals(options.LocalHost))
 				tcpClient.bind(InetSocketAddress.createUnresolved(options.LocalHost, options.LocalPort));
-			tcpClient.connect(InetSocketAddress.createUnresolved(options.Host, options.Port),
-					options.ConnectionTimeout);
 
 			if (!tcpClient.isConnected())
 				throw new RuntimeException(String.format("Failed to connect to %s:%s.", options.Host, options.Port));
