@@ -2,9 +2,8 @@ package Quick.Protocol;
 
 import java.util.HashMap;
 
-@SuppressWarnings({ "unchecked", "rawtypes" })
 public class CommandExecuterManager {
-	private HashMap<String, ICommandExecuter> commandExecuterDict = new HashMap<String, ICommandExecuter>();
+	private HashMap<String, ICommandExecuter<?, ?>> commandExecuterDict = new HashMap<String, ICommandExecuter<?, ?>>();
 
 	public CommandExecuterManager() {
 	}
@@ -18,11 +17,11 @@ public class CommandExecuterManager {
 		return commandExecuterDict.keySet().toArray(new String[0]);
 	}
 
-	public void Register(String cmdRequestTypeName, ICommandExecuter commandExecuter) {
+	public void Register(String cmdRequestTypeName, ICommandExecuter<?, ?> commandExecuter) {
 		commandExecuterDict.put(cmdRequestTypeName, commandExecuter);
 	}
 
-	public void Register(Class cmdRequestType, ICommandExecuter commandExecuter) {
+	public void Register(Class<?> cmdRequestType, ICommandExecuter<?, ?> commandExecuter) {
 		Register(cmdRequestType.getName(), commandExecuter);
 	}
 
@@ -37,7 +36,7 @@ public class CommandExecuterManager {
 	public Object ExecuteCommand(QpChannel handler, String cmdRequestTypeName, Object cmdRequestModel) {
 		if (!CanExecuteCommand(cmdRequestTypeName))
 			throw new RuntimeException(String.format("Command Request Type[{0}] has no executer.", cmdRequestTypeName));
-		ICommandExecuter commandExecuter = commandExecuterDict.get(cmdRequestTypeName);
+		ICommandExecuter<?, ?> commandExecuter = commandExecuterDict.get(cmdRequestTypeName);
 		return commandExecuter.Execute(handler, cmdRequestModel);
 	}
 

@@ -22,11 +22,11 @@ public abstract class QpChannelOptions {
 	/**
 	 * 支持的指令集
 	 */
-	public QpInstruction[] GetInstructionSet() {
+	public QpInstruction[] getInstructionSet() {
 		return _InstructionSet;
 	}
 
-	public void SetInstructionSet(QpInstruction[] value) {
+	public void setInstructionSet(QpInstruction[] value) {
 		_InstructionSet = value;
 		QpInstruction baseInstruction = Quick.Protocol.Base.getInstruction();
 		ArrayList<QpInstruction> list = new ArrayList<QpInstruction>();

@@ -214,7 +214,7 @@ public abstract class QpChannel {
 			throw new RuntimeException(e);
 		}
 
-		for (QpInstruction instructionSet : options.GetInstructionSet()) {
+		for (QpInstruction instructionSet : options.getInstructionSet()) {
 			// 添加通知数据包信息
 			if (instructionSet.NoticeInfos != null && instructionSet.NoticeInfos.length > 0) {
 				for (QpNoticeInfo item : instructionSet.NoticeInfos) {
@@ -234,21 +234,28 @@ public abstract class QpChannel {
 		}
 	}
 
-	protected void InitQpPackageHandler_Stream(InputStream instream, OutputStream outstream) {
-		if (instream != null) {
+	protected void InitQpPackageHandler_Stream(ConnectionStreamInfo connectionStreamInfo) {
+		if (QpPackageHandler_InputStream != null) {
 			try {
 				QpPackageHandler_InputStream.close();
 			} catch (Exception ex) {
 			}
 		}
-		QpPackageHandler_InputStream = instream;
-		if (outstream != null) {
+		if (QpPackageHandler_OutputStream != null) {
 			try {
 				QpPackageHandler_OutputStream.close();
 			} catch (Exception ex) {
 			}
 		}
-		QpPackageHandler_OutputStream = outstream;
+		
+		if(connectionStreamInfo==null) {
+			QpPackageHandler_InputStream=null;
+			QpPackageHandler_OutputStream=null;
+		}
+
+		QpPackageHandler_InputStream = connectionStreamInfo.ConnectionInputStream;
+		QpPackageHandler_OutputStream = connectionStreamInfo.ConnectionOutputStream;
+		
 		options.InternalCompress = false;
 		options.InternalEncrypt = false;
 	}
@@ -261,7 +268,7 @@ public abstract class QpChannel {
 	protected void OnReadError(Exception exception) {
 		LastException = exception;
 		LogUtils.Log("[ReadError]%s: %s", dateFormat.format(new Date()), ExceptionUtils.GetExceptionString(exception));
-		InitQpPackageHandler_Stream(null, null);
+		InitQpPackageHandler_Stream(null);
 	}
 
 	private void writePackageTotalLengthToBuffer(byte[] buffer, int offset, int packageTotalLength) {
