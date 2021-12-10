@@ -1,8 +1,6 @@
 package Quick.Protocol;
 
 import java.util.ArrayList;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import Quick.Protocol.Listeners.DisconnectedListener;
 import Quick.Protocol.Utils.CancellationToken;
@@ -28,7 +26,7 @@ public abstract class QpClient extends QpChannel {
 		this.Options = options;
 	}
 
-	protected abstract Future<ConnectionStreamInfo> InnerConnectAsync();
+	protected abstract ConnectionStreamInfo InnerConnectAsync();
 
 	/// <summary>
 	/// 连接
@@ -40,7 +38,7 @@ public abstract class QpClient extends QpChannel {
 
 		ConnectionStreamInfo connectionStreamInfo;
 		try {
-			connectionStreamInfo = InnerConnectAsync().get(Options.ConnectionTimeout, TimeUnit.MILLISECONDS);
+			connectionStreamInfo = InnerConnectAsync();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

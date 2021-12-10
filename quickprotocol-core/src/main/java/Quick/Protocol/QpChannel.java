@@ -16,7 +16,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +29,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
 import org.apache.commons.codec.binary.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 
 import Quick.Protocol.Exceptions.CommandException;
 import Quick.Protocol.Exceptions.ProtocolException;
@@ -247,15 +247,14 @@ public abstract class QpChannel {
 			} catch (Exception ex) {
 			}
 		}
-		
-		if(connectionStreamInfo==null) {
-			QpPackageHandler_InputStream=null;
-			QpPackageHandler_OutputStream=null;
-		}
 
-		QpPackageHandler_InputStream = connectionStreamInfo.ConnectionInputStream;
-		QpPackageHandler_OutputStream = connectionStreamInfo.ConnectionOutputStream;
-		
+		if (connectionStreamInfo == null) {
+			QpPackageHandler_InputStream = null;
+			QpPackageHandler_OutputStream = null;
+		} else {
+			QpPackageHandler_InputStream = connectionStreamInfo.ConnectionInputStream;
+			QpPackageHandler_OutputStream = connectionStreamInfo.ConnectionOutputStream;
+		}
 		options.InternalCompress = false;
 		options.InternalEncrypt = false;
 	}
@@ -485,7 +484,7 @@ public abstract class QpChannel {
 				buffer[PACKAGE_HEAD_LENGTH - 1] = (byte) QpPackageType.CommandRequest;
 				// 写入指令编号
 				int commandIdBufferOffset = PACKAGE_HEAD_LENGTH;
-				byte[] commandIdBuffer = BitConverter.GetBytes(UUID.fromString(commandId));
+				byte[] commandIdBuffer = Hex.decode(commandId);
 				System.arraycopy(commandIdBuffer, 0, buffer, commandIdBufferOffset, commandIdBuffer.length);
 
 				int typeNameByteLengthOffset = commandIdBufferOffset + 16;
@@ -540,7 +539,7 @@ public abstract class QpChannel {
 
 				// 写入指令编号
 				int commandIdBufferOffset = PACKAGE_HEAD_LENGTH;
-				byte[] commandIdBuffer = BitConverter.GetBytes(UUID.fromString(commandId));
+				byte[] commandIdBuffer = Hex.decode(commandId);
 				System.arraycopy(commandIdBuffer, 0, buffer, commandIdBufferOffset, commandIdBuffer.length);
 
 				// 写入返回码
@@ -926,108 +925,118 @@ public abstract class QpChannel {
 
 		Thread thread = new Thread(new Runnable() {
 			public void run() {
-				while (true) {
-					if (token.IsCancellationRequested())
-						break;
-					ArraySegment pkg = ReadPackageAsync(token);
-					if (pkg.getCount() > 0) {
-						byte packageType = pkg.getArray()[pkg.getOffset() + PACKAGE_HEAD_LENGTH - 1];
-						switch (packageType) {
-						case QpPackageType.Heartbeat: {
-							if (LogUtils.LogHeartbeat)
-								LogUtils.Log(
-										String.format("%s: [Recv-HeartbetaPackage]", dateFormat.format(new Date())));
-							if (HeartbeatPackageReceivedListeners.size() > 0)
-								for (HeartbeatPackageReceivedListener listener : HeartbeatPackageReceivedListeners)
-									listener.Invoke();
+				try {
+					while (true) {
+						if (token.IsCancellationRequested())
 							break;
-						}
-						case QpPackageType.Notice: {
-							int typeNameLengthOffset = pkg.getOffset() + PACKAGE_HEAD_LENGTH;
-							int typeNameLength = pkg.getArray()[typeNameLengthOffset];
-
-							int typeNameOffset = typeNameLengthOffset + 1;
-
-							String typeName = encoding
-									.decode(ByteBuffer.wrap(pkg.getArray(), typeNameOffset, typeNameLength)).toString();
-							int contentOffset = typeNameOffset + typeNameLength;
-							String content = encoding.decode(ByteBuffer.wrap(pkg.getArray(), contentOffset,
-									pkg.getOffset() + pkg.getCount() - contentOffset)).toString();
-							if (LogUtils.LogNotice)
-								LogUtils.Log("%s: [Recv-NoticePackage]Type:%s,Content:%s",
-										dateFormat.format(new Date()), typeName,
-										LogUtils.LogContent ? content : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
-
-							if (RawNoticePackageReceivedListeners.size() > 0)
-								for (RawNoticePackageReceivedListener listener : RawNoticePackageReceivedListeners)
-									listener.Invoke(typeName, content);
-							break;
-						}
-						case QpPackageType.CommandRequest: {
-							int commandIdOffset = pkg.getOffset() + PACKAGE_HEAD_LENGTH;
-							String commandId = BitConverter.ToString(pkg.getArray(), commandIdOffset, COMMAND_ID_LENGTH)
-									.replace("-", "").toLowerCase();
-
-							int typeNameLengthOffset = commandIdOffset + COMMAND_ID_LENGTH;
-							int typeNameLength = pkg.getArray()[typeNameLengthOffset];
-
-							int typeNameOffset = typeNameLengthOffset + 1;
-							String typeName = encoding
-									.decode(ByteBuffer.wrap(pkg.getArray(), typeNameOffset, typeNameLength)).toString();
-
-							int contentOffset = typeNameOffset + typeNameLength;
-							String content = encoding.decode(ByteBuffer.wrap(pkg.getArray(), contentOffset,
-									pkg.getOffset() + pkg.getCount() - contentOffset)).toString();
-
-							if (LogUtils.LogCommand)
-								LogUtils.Log("%s: [Recv-CommandRequestPackage]Type:%s,Content:%s",
-										dateFormat.format(new Date()), typeName,
-										LogUtils.LogContent ? content : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
-
-							OnCommandRequestReceived(commandId, typeName, content);
-							break;
-						}
-						case QpPackageType.CommandResponse: {
-							int commandIdOffset = pkg.getOffset() + PACKAGE_HEAD_LENGTH;
-							String commandId = BitConverter.ToString(pkg.getArray(), commandIdOffset, COMMAND_ID_LENGTH)
-									.replace("-", "").toLowerCase();
-
-							int codeOffset = commandIdOffset + COMMAND_ID_LENGTH;
-							byte code = pkg.getArray()[codeOffset];
-
-							String typeName = null;
-							String content = null;
-							String message = null;
-
-							// 如果成功
-							if (code == 0) {
-								int typeNameLengthOffset = codeOffset + 1;
-								int typeNameLength = Convert.ToInt32(pkg.getArray()[typeNameLengthOffset]);
+						ArraySegment pkg = ReadPackageAsync(token);
+						if (pkg.getCount() > 0) {
+							byte packageType = pkg.getArray()[pkg.getOffset() + PACKAGE_HEAD_LENGTH - 1];
+							switch (packageType) {
+							case QpPackageType.Heartbeat: {
+								if (LogUtils.LogHeartbeat)
+									LogUtils.Log(String.format("%s: [Recv-HeartbetaPackage]",
+											dateFormat.format(new Date())));
+								if (HeartbeatPackageReceivedListeners.size() > 0)
+									for (HeartbeatPackageReceivedListener listener : HeartbeatPackageReceivedListeners)
+										listener.Invoke();
+								break;
+							}
+							case QpPackageType.Notice: {
+								int typeNameLengthOffset = pkg.getOffset() + PACKAGE_HEAD_LENGTH;
+								int typeNameLength = pkg.getArray()[typeNameLengthOffset];
 
 								int typeNameOffset = typeNameLengthOffset + 1;
-								typeName = encoding
+
+								String typeName = encoding
+										.decode(ByteBuffer.wrap(pkg.getArray(), typeNameOffset, typeNameLength))
+										.toString();
+								int contentOffset = typeNameOffset + typeNameLength;
+								String content = encoding.decode(ByteBuffer.wrap(pkg.getArray(), contentOffset,
+										pkg.getOffset() + pkg.getCount() - contentOffset)).toString();
+								if (LogUtils.LogNotice)
+									LogUtils.Log("%s: [Recv-NoticePackage]Type:%s,Content:%s",
+											dateFormat.format(new Date()), typeName,
+											LogUtils.LogContent ? content : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
+
+								if (RawNoticePackageReceivedListeners.size() > 0)
+									for (RawNoticePackageReceivedListener listener : RawNoticePackageReceivedListeners)
+										listener.Invoke(typeName, content);
+								break;
+							}
+							case QpPackageType.CommandRequest: {
+								int commandIdOffset = pkg.getOffset() + PACKAGE_HEAD_LENGTH;
+								String commandId = BitConverter
+										.ToString(pkg.getArray(), commandIdOffset, COMMAND_ID_LENGTH).replace("-", "")
+										.toLowerCase();
+
+								int typeNameLengthOffset = commandIdOffset + COMMAND_ID_LENGTH;
+								int typeNameLength = pkg.getArray()[typeNameLengthOffset];
+
+								int typeNameOffset = typeNameLengthOffset + 1;
+								String typeName = encoding
 										.decode(ByteBuffer.wrap(pkg.getArray(), typeNameOffset, typeNameLength))
 										.toString();
 
 								int contentOffset = typeNameOffset + typeNameLength;
-								content = encoding.decode(ByteBuffer.wrap(pkg.getArray(), contentOffset,
+								String content = encoding.decode(ByteBuffer.wrap(pkg.getArray(), contentOffset,
 										pkg.getOffset() + pkg.getCount() - contentOffset)).toString();
-							} else {
-								int messageOffset = codeOffset + 1;
-								message = encoding.decode(ByteBuffer.wrap(pkg.getArray(), messageOffset,
-										pkg.getOffset() + pkg.getCount() - messageOffset)).toString();
+
+								if (LogUtils.LogCommand)
+									LogUtils.Log("%s: [Recv-CommandRequestPackage]Type:%s,Content:%s",
+											dateFormat.format(new Date()), typeName,
+											LogUtils.LogContent ? content : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
+
+								OnCommandRequestReceived(commandId, typeName, content);
+								break;
 							}
+							case QpPackageType.CommandResponse: {
+								int commandIdOffset = pkg.getOffset() + PACKAGE_HEAD_LENGTH;
+								String commandId = BitConverter
+										.ToString(pkg.getArray(), commandIdOffset, COMMAND_ID_LENGTH).replace("-", "")
+										.toLowerCase();
 
-							if (LogUtils.LogCommand)
-								LogUtils.Log("%s: [Recv-CommandResponsePackage]Code:%s，Message：%s，Type:%s,Content:%s",
-										dateFormat.format(new Date()), code, message, typeName,
-										LogUtils.LogContent ? content : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
+								int codeOffset = commandIdOffset + COMMAND_ID_LENGTH;
+								byte code = pkg.getArray()[codeOffset];
 
-							OnCommandResponseReceived(commandId, code, message, typeName, content);
-							break;
-						}
+								String typeName = null;
+								String content = null;
+								String message = null;
+
+								// 如果成功
+								if (code == 0) {
+									int typeNameLengthOffset = codeOffset + 1;
+									int typeNameLength = Convert.ToInt32(pkg.getArray()[typeNameLengthOffset]);
+
+									int typeNameOffset = typeNameLengthOffset + 1;
+									typeName = encoding
+											.decode(ByteBuffer.wrap(pkg.getArray(), typeNameOffset, typeNameLength))
+											.toString();
+
+									int contentOffset = typeNameOffset + typeNameLength;
+									content = encoding.decode(ByteBuffer.wrap(pkg.getArray(), contentOffset,
+											pkg.getOffset() + pkg.getCount() - contentOffset)).toString();
+								} else {
+									int messageOffset = codeOffset + 1;
+									message = encoding.decode(ByteBuffer.wrap(pkg.getArray(), messageOffset,
+											pkg.getOffset() + pkg.getCount() - messageOffset)).toString();
+								}
+
+								if (LogUtils.LogCommand)
+									LogUtils.Log(
+											"%s: [Recv-CommandResponsePackage]Code:%s，Message：%s，Type:%s,Content:%s",
+											dateFormat.format(new Date()), code, message, typeName,
+											LogUtils.LogContent ? content : LogUtils.NOT_SHOW_CONTENT_MESSAGE);
+
+								OnCommandResponseReceived(commandId, code, message, typeName, content);
+								break;
+							}
+							}
 						}
 					}
+				} catch (Exception ex) {
+					OnReadError(ex);
+					return;
 				}
 			}
 		});

@@ -1,5 +1,7 @@
 package Quick.Protocol;
 
+import java.lang.annotation.Annotation;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
@@ -35,7 +37,6 @@ public class QpNoticeInfo {
 	public QpNoticeInfo() {
 	}
 
-	
 	public QpNoticeInfo(String name, String description, Class noticeType) {
 		Name = name;
 		Description = description;

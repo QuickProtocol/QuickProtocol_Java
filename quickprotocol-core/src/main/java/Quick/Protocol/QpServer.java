@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import Quick.Protocol.Listeners.AuchenticatedListener;
-import Quick.Protocol.Listeners.ConnectedListener;
 import Quick.Protocol.Listeners.DisconnectedListener;
+import Quick.Protocol.Listeners.ServerChannelConnectedListener;
+import Quick.Protocol.Listeners.ServerChannelDisconnectedListener;
 import Quick.Protocol.Utils.CancellationToken;
 import Quick.Protocol.Utils.LogUtils;
 
@@ -30,23 +31,23 @@ public abstract class QpServer {
 	/// </summary>
 	public QpServerChannel[] AuchenticatedChannels = new QpServerChannel[0];
 
-	private ArrayList<ConnectedListener> ChannelConnectedListeners = new ArrayList<ConnectedListener>();
+	private ArrayList<ServerChannelConnectedListener> ChannelConnectedListeners = new ArrayList<ServerChannelConnectedListener>();
 
-	public void addChannelConnectedListener(ConnectedListener listener) {
+	public void addChannelConnectedListener(ServerChannelConnectedListener listener) {
 		ChannelConnectedListeners.add(listener);
 	}
 
-	public void removeChannelConnectedListener(ConnectedListener listener) {
+	public void removeChannelConnectedListener(ServerChannelConnectedListener listener) {
 		ChannelConnectedListeners.remove(listener);
 	}
 
-	private ArrayList<DisconnectedListener> ChannelDisconnectedListeners = new ArrayList<DisconnectedListener>();
+	private ArrayList<ServerChannelDisconnectedListener> ChannelDisconnectedListeners = new ArrayList<ServerChannelDisconnectedListener>();
 
-	public void addChannelConnectedListener(DisconnectedListener listener) {
+	public void addChannelDisconnectedListener(ServerChannelDisconnectedListener listener) {
 		ChannelDisconnectedListeners.add(listener);
 	}
 
-	public void removeChannelConnectedListener(DisconnectedListener listener) {
+	public void removeChannelDisconnectedListener(ServerChannelDisconnectedListener listener) {
 		ChannelDisconnectedListeners.remove(listener);
 	}
 
@@ -108,8 +109,8 @@ public abstract class QpServer {
 				} catch (Exception ex) {
 				}
 				if (ChannelDisconnectedListeners.size() > 0)
-					for (DisconnectedListener listener : ChannelDisconnectedListeners)
-						listener.Invoke();
+					for (ServerChannelDisconnectedListener listener : ChannelDisconnectedListeners)
+						listener.Invoke(channel);
 			}
 
 		});
@@ -118,8 +119,8 @@ public abstract class QpServer {
 
 			public void run() {
 				if (ChannelConnectedListeners.size() > 0)
-					for (ConnectedListener listener : ChannelConnectedListeners)
-						listener.Invoke();
+					for (ServerChannelConnectedListener listener : ChannelConnectedListeners)
+						listener.Invoke(channel);
 			}
 
 		}).start();
@@ -127,15 +128,21 @@ public abstract class QpServer {
 
 	protected abstract void InnerAcceptAsync(CancellationToken token);
 
-	private void beginAccept(CancellationToken token) {
-		if (token.IsCancellationRequested())
-			return;
-		try {
-			InnerAcceptAsync(token);
-		} catch (Exception ex) {
-			return;
-		}
-		beginAccept(token);
+	private void beginAccept(final CancellationToken token) {
+		new Thread(new Runnable() {
+
+			public void run() {
+				while (true) {
+					if (token.IsCancellationRequested())
+						return;
+					try {
+						InnerAcceptAsync(token);
+					} catch (Exception ex) {
+						return;
+					}
+				}
+			}
+		}).start();
 	}
 
 	public void Stop() {

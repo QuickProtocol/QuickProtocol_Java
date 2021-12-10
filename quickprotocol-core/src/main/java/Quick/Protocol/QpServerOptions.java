@@ -23,7 +23,7 @@ public abstract class QpServerOptions extends QpChannelOptions {
 
 	public QpServerOptions Clone() {
 		QpServerOptions ret = (QpServerOptions) JsonConvert.DeserializeObject(JsonConvert.SerializeObject(this),
-				QpServerOptions.class);
+				this.getClass());
 		ret.setInstructionSet(getInstructionSet());
 		ret.CommandExecuterManagerList = CommandExecuterManagerList;
 		ret.ProtocolErrorHandler = ProtocolErrorHandler;

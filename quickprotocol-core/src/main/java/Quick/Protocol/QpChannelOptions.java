@@ -3,11 +3,14 @@ package Quick.Protocol;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public abstract class QpChannelOptions {
 
 	/**
 	 * 心跳间隔，为发送或接收超时中小的值的三分一
 	 */
+	@JsonIgnore()
 	public int getHeartBeatInterval() {
 		return InternalTransportTimeout / 3;
 	}
@@ -17,15 +20,18 @@ public abstract class QpChannelOptions {
 	 */
 	public String Password = "HelloQP";
 
+	@JsonIgnore()
 	private QpInstruction[] _InstructionSet = new QpInstruction[] { Quick.Protocol.Base.getInstruction() };
 
 	/**
 	 * 支持的指令集
 	 */
+	@JsonIgnore()
 	public QpInstruction[] getInstructionSet() {
 		return _InstructionSet;
 	}
 
+	@JsonIgnore()
 	public void setInstructionSet(QpInstruction[] value) {
 		_InstructionSet = value;
 		QpInstruction baseInstruction = Quick.Protocol.Base.getInstruction();
@@ -46,6 +52,7 @@ public abstract class QpChannelOptions {
 	/**
 	 * 内部是否加密
 	 */
+
 	protected Boolean InternalEncrypt = false;
 	/**
 	 * 内部接收超时(默认15秒)
