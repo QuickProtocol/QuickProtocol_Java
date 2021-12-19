@@ -1,7 +1,5 @@
 package Quick.Protocol;
 
-import java.lang.annotation.Annotation;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
@@ -13,13 +11,12 @@ import Quick.Protocol.Annotations.DisplayName;
 /**
  * 通知信息
  */
-@SuppressWarnings({ "unchecked", "rawtypes" })
 public class QpNoticeInfo {
 
 	private static ObjectMapper mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 	private static JsonSchemaGenerator schemaGen = new JsonSchemaGenerator(mapper);
 
-	private Class noticeType;
+	private Class<?> noticeType;
 
 	/**
 	 * 名称
@@ -37,7 +34,7 @@ public class QpNoticeInfo {
 	public QpNoticeInfo() {
 	}
 
-	public QpNoticeInfo(String name, String description, Class noticeType) {
+	public QpNoticeInfo(String name, String description, Class<?> noticeType) {
 		Name = name;
 		Description = description;
 		this.noticeType = noticeType;
@@ -55,7 +52,7 @@ public class QpNoticeInfo {
 	/// <summary>
 	/// 获取通知类型
 	/// </summary>
-	public Class GetNoticeType() {
+	public Class<?> GetNoticeType() {
 		if (noticeType != null)
 			return noticeType;
 		try {
@@ -80,7 +77,7 @@ public class QpNoticeInfo {
 	 * @param type
 	 * @return
 	 */
-	public static QpNoticeInfo Create(Class type) {
+	public static QpNoticeInfo Create(Class<?> type) {
 		String name = null;
 		if (name == null) {
 			DisplayName ann = (DisplayName) type.getAnnotation(DisplayName.class);

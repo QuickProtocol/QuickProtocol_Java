@@ -11,8 +11,8 @@ import org.apache.commons.codec.binary.Hex;
 
 import Quick.Protocol.Exceptions.CommandException;
 import Quick.Protocol.Exceptions.ProtocolException;
+import Quick.Protocol.Listeners.AuchenticateTimeoutListener;
 import Quick.Protocol.Listeners.AuchenticatedListener;
-import Quick.Protocol.Listeners.DisconnectedListener;
 import Quick.Protocol.Utils.BitConverter;
 import Quick.Protocol.Utils.CancellationToken;
 import Quick.Protocol.Utils.CryptographyUtils;
@@ -40,18 +40,18 @@ public class QpServerChannel extends QpChannel {
 		AuchenticatedListeners.remove(listener);
 	}
 
-	private ArrayList<DisconnectedListener> DisconnectedListeners = new ArrayList<DisconnectedListener>();
+	private ArrayList<AuchenticateTimeoutListener> AuchenticateTimeoutListeners = new ArrayList<AuchenticateTimeoutListener>();
 
-	public void addDisconnectedListener(DisconnectedListener listener) {
-		DisconnectedListeners.add(listener);
+	public void addAuchenticateTimeoutListener(AuchenticateTimeoutListener listener) {
+		AuchenticateTimeoutListeners.add(listener);
 	}
 
-	public void removeDisconnectedListener(DisconnectedListener listener) {
-		DisconnectedListeners.remove(listener);
+	public void removeAuchenticateTimeoutListener(AuchenticateTimeoutListener listener) {
+		AuchenticateTimeoutListeners.remove(listener);
 	}
 
-	public QpServerChannel(QpServer server, ConnectionStreamInfo connectionStreamInfo, String channelName,
-			CancellationToken cancellationToken, QpServerOptions options) {
+	public QpServerChannel(QpServer server, final ConnectionStreamInfo connectionStreamInfo, String channelName,
+			CancellationToken cancellationToken, final QpServerOptions options) {
 		super(options);
 
 		this.server = server;
@@ -69,7 +69,6 @@ public class QpServerChannel extends QpChannel {
 		});
 		// 修改缓存大小
 		ChangeBufferSize(options.BufferSize);
-		IsConnected = true;
 
 		// 初始化连接相关指令处理器
 		CommandExecuterManager connectAndAuthCommandExecuterManager = new CommandExecuterManager();
@@ -104,6 +103,43 @@ public class QpServerChannel extends QpChannel {
 		InitQpPackageHandler_Stream(connectionStreamInfo);
 		// 开始读取其他数据包
 		BeginReadPackage(cts);
+
+		// 如果认证超时时间后没有通过认证，则断开连接
+		if (options.AuthenticateTimeout > 0) {
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						Thread.sleep(options.AuthenticateTimeout);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					if (cts.IsCancellationRequested())
+						return;
+
+					if (connectionStreamInfo.ConnectionInputStream != null) {
+						try {
+							connectionStreamInfo.ConnectionInputStream.close();
+							connectionStreamInfo.ConnectionInputStream = null;
+						} catch (Exception ex) {
+						}
+					}
+					if (connectionStreamInfo.ConnectionOutputStream != null) {
+						try {
+							connectionStreamInfo.ConnectionOutputStream.close();
+							connectionStreamInfo.ConnectionOutputStream = null;
+						} catch (Exception ex) {
+						}
+					}
+
+					if (AuchenticateTimeoutListeners.size() > 0)
+						for (AuchenticateTimeoutListener listener : AuchenticateTimeoutListeners)
+							listener.Invoke();
+				}
+
+			}).start();
+		}
 	}
 
 	private Quick.Protocol.Commands.Connect.Response connect(QpChannel handler,
@@ -145,6 +181,7 @@ public class QpServerChannel extends QpChannel {
 			}).start();
 			throw new CommandException((byte) 1, "认证失败！");
 		}
+		IsConnected = true;
 		if (AuchenticatedListeners.size() > 0)
 			for (AuchenticatedListener listener : AuchenticatedListeners)
 				listener.Invoke();
@@ -202,11 +239,5 @@ public class QpServerChannel extends QpChannel {
 		}
 		Stop();
 		super.OnReadError(exception);
-		if (IsConnected) {
-			IsConnected = false;
-			if (DisconnectedListeners.size() > 0)
-				for (DisconnectedListener listener : DisconnectedListeners)
-					listener.Invoke();
-		}
 	}
 }

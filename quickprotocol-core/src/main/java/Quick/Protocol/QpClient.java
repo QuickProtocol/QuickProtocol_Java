@@ -1,24 +1,12 @@
 package Quick.Protocol;
 
 import java.util.ArrayList;
-
-import Quick.Protocol.Listeners.DisconnectedListener;
 import Quick.Protocol.Utils.CancellationToken;
 import Quick.Protocol.Utils.CryptographyUtils;
 
 public abstract class QpClient extends QpChannel {
 	private CancellationToken cts = null;
 	public QpClientOptions Options;
-
-	private ArrayList<DisconnectedListener> DisconnectedListeners = new ArrayList<DisconnectedListener>();
-
-	public void addDisconnectedListener(DisconnectedListener listener) {
-		DisconnectedListeners.add(listener);
-	}
-
-	public void removeDisconnectedListener(DisconnectedListener listener) {
-		DisconnectedListeners.remove(listener);
-	}
 
 	public QpClient(QpClientOptions options) {
 		super(options);
@@ -42,8 +30,6 @@ public abstract class QpClient extends QpChannel {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-
-		IsConnected = true;
 
 		// 初始化网络
 		InitQpPackageHandler_Stream(connectionStreamInfo);
@@ -78,6 +64,7 @@ public abstract class QpClient extends QpChannel {
 		super.SendCommand(handshakeRequest, Quick.Protocol.Commands.HandShake.Response.class, 5000, new Runnable() {
 			public void run() {
 				Options.OnAuthPassed();
+				IsConnected = true;
 			}
 		});
 
@@ -100,15 +87,6 @@ public abstract class QpClient extends QpChannel {
 		if (cts != null) {
 			cts.Cancel();
 			cts = null;
-		}
-	}
-
-	protected void Disconnect() {
-		if (IsConnected) {
-			IsConnected = false;
-			if (DisconnectedListeners.size() > 0)
-				for (DisconnectedListener listener : DisconnectedListeners)
-					listener.Invoke();
 		}
 	}
 

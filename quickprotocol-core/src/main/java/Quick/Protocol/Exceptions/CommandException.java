@@ -1,6 +1,10 @@
 package Quick.Protocol.Exceptions;
 
 public class CommandException extends RuntimeException {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6708464326046860574L;
 	/// <summary>
 	/// 错误码
 	/// </summary>

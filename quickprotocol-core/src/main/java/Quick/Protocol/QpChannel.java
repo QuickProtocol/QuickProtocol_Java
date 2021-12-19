@@ -35,6 +35,7 @@ import Quick.Protocol.Exceptions.CommandException;
 import Quick.Protocol.Exceptions.ProtocolException;
 import Quick.Protocol.Listeners.CommandRequestPackageReceivedListener;
 import Quick.Protocol.Listeners.CommandResponsePackageReceivedListener;
+import Quick.Protocol.Listeners.DisconnectedListener;
 import Quick.Protocol.Listeners.HeartbeatPackageReceivedListener;
 import Quick.Protocol.Listeners.NoticePackageReceivedListener;
 import Quick.Protocol.Listeners.RawCommandRequestPackageReceivedListener;
@@ -97,9 +98,30 @@ public abstract class QpChannel {
 	private ConcurrentHashMap<String, CommandContext> commandDict = new ConcurrentHashMap<String, CommandContext>();
 
 	/**
-	 * 当前是否连接
+	 * 当前是否连接，要连接且认证通过后，才设置此属性为true
 	 */
 	public boolean IsConnected = false;
+	private ArrayList<DisconnectedListener> DisconnectedListeners = new ArrayList<DisconnectedListener>();
+
+	public void addDisconnectedListener(DisconnectedListener listener) {
+		DisconnectedListeners.add(listener);
+	}
+
+	public void removeDisconnectedListener(DisconnectedListener listener) {
+		DisconnectedListeners.remove(listener);
+	}
+
+	protected void Disconnect() {
+		synchronized (this) {
+			if (IsConnected) {
+				IsConnected = false;
+				if (DisconnectedListeners.size() > 0)
+					for (DisconnectedListener listener : DisconnectedListeners)
+						listener.Invoke();
+			}
+		}
+	}
+
 	/**
 	 * 最后的异常
 	 */
@@ -268,6 +290,7 @@ public abstract class QpChannel {
 		LastException = exception;
 		LogUtils.Log("[ReadError]%s: %s", dateFormat.format(new Date()), ExceptionUtils.GetExceptionString(exception));
 		InitQpPackageHandler_Stream(null);
+		Disconnect();
 	}
 
 	private void writePackageTotalLengthToBuffer(byte[] buffer, int offset, int packageTotalLength) {
