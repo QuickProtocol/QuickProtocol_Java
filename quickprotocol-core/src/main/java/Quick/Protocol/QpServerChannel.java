@@ -115,7 +115,8 @@ public class QpServerChannel extends QpChannel {
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-					if (cts.IsCancellationRequested())
+					// 如果已经取消或者已经连接
+					if (cts.IsCancellationRequested() || IsConnected)
 						return;
 
 					if (connectionStreamInfo.ConnectionInputStream != null) {
@@ -179,7 +180,7 @@ public class QpServerChannel extends QpChannel {
 				}
 
 			}).start();
-			throw new CommandException((byte) 1, "认证失败！");
+			throw new CommandException((byte) 1, "Authenticate failed.");
 		}
 		IsConnected = true;
 		if (AuchenticatedListeners.size() > 0)

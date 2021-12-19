@@ -639,11 +639,9 @@ public abstract class QpChannel {
 			while (count < totalCount) {
 				if (cancellationToken.IsCancellationRequested())
 					break;
-
-				int streamAvailable = stream.available();
-				if (streamAvailable < 0)
-					throw new RuntimeException("从网络流中读取错误！");
-				if (streamAvailable == 0) {
+				beginWaitTime = new Date();
+				ret = stream.read(buffer, count + startIndex, totalCount - count);
+				if (ret == 0) {
 					Date currentTime = new Date();
 					long usedTime = currentTime.getTime() - beginWaitTime.getTime();
 					if (usedTime > options.InternalTransportTimeout)
@@ -651,9 +649,6 @@ public abstract class QpChannel {
 					Thread.sleep(100);
 					continue;
 				}
-				beginWaitTime = new Date();
-				ret = stream.read(buffer, count + startIndex, Math.min(totalCount - count, streamAvailable));
-
 				if (cancellationToken.IsCancellationRequested() || ret == 0)
 					break;
 				if (ret < 0)
