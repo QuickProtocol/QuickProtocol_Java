@@ -646,7 +646,7 @@ public abstract class QpChannel {
 					long usedTime = currentTime.getTime() - beginWaitTime.getTime();
 					if (usedTime > options.InternalTransportTimeout)
 						throw new RuntimeException("Read timeout", new TimeoutException());
-					Thread.sleep(100);
+					Thread.sleep(1);
 					continue;
 				}
 				if (cancellationToken.IsCancellationRequested() || ret == 0)
