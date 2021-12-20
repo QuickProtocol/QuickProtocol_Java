@@ -630,8 +630,8 @@ public abstract class QpChannel {
 			CancellationToken cancellationToken) {
 		try {
 			if (totalCount > buffer.length - startIndex)
-				throw new IOException(
-						String.format("要接收的数据大小[%s]超出了缓存的大小[%s]！", totalCount, buffer.length - startIndex));
+				throw new IOException(String.format("Recv data length[%s] bigger than buffer length[%s]", totalCount,
+						buffer.length - startIndex));
 			int ret;
 			int count = 0;
 
@@ -645,14 +645,14 @@ public abstract class QpChannel {
 					Date currentTime = new Date();
 					long usedTime = currentTime.getTime() - beginWaitTime.getTime();
 					if (usedTime > options.InternalTransportTimeout)
-						throw new RuntimeException("读取超时", new TimeoutException());
+						throw new RuntimeException("Read timeout", new TimeoutException());
 					Thread.sleep(100);
 					continue;
 				}
 				if (cancellationToken.IsCancellationRequested() || ret == 0)
 					break;
 				if (ret < 0)
-					throw new IOException("从网络流中读取错误！");
+					throw new IOException("Read error from stream.");
 				count += ret;
 			}
 			return count;
